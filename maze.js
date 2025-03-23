@@ -13,6 +13,12 @@ let stack = [];
 let current;
 let animationId;
 
+let player = {
+  row: 0,
+  col: 0,
+  color: "blue",
+};
+
 // ========== Cell Class ==========
 class Cell {
   constructor(row, col) {
@@ -20,6 +26,7 @@ class Cell {
     this.col = col;
     this.walls = { top: true, right: true, bottom: true, left: true };
     this.visited = false;
+    this.isSolution = false;
   }
 
   // Draws the cell and its walls
@@ -172,6 +179,16 @@ function highlightCurrentCell(cell) {
   ctx.fillRect(x, y, cellSize, cellSize);
 }
 
+function drawPlayer() {
+  ctx.fillStyle = player.color;
+  ctx.fillRect(
+    player.col * cellSize + cellSize * 0.25,
+    player.row * cellSize + cellSize * 0.25,
+    cellSize * 0.5,
+    cellSize * 0.5
+  );
+}
+
 // Draws the entire grid and highlights the current cell
 function drawGrid() {
   for (let i = 0; i < grid.length; i++) {
@@ -203,39 +220,6 @@ function drawStartAndEnd(startCell, endCell) {
   );
 }
 
-// function bfs(startCell) {
-//   const visited = new Set();
-//   const queue = [{ cell: startCell, distance: 0 }];
-//   let farthestCells = [];
-//   let maxDistance = 0;
-
-//   visited.add(index(startCell.row, startCell.col));
-
-//   while (queue.length > 0) {
-//     const { cell, distance } = queue.shift();
-
-//     if (distance > maxDistance) {
-//       maxDistance = distance;
-//       farthestCells = [cell]; //reset the farthestCells
-//     } else {
-//       farthestCells.push(cell);
-//     }
-
-//     const neighbors = cell.getConnectedNeighbors();
-//     for (const neighbor of neighbors) {
-//       const idx = index(neighbor.row, neighbor.col);
-//       if (!visited.has(idx)) {
-//         visited.add(idx);
-//         queue.push({ cell: neighbor, distance: distance + 1 });
-//       }
-//     }
-//   }
-
-//   console.log(farthestCells, maxDistance);
-
-//   return farthestCells;
-// }
-
 // ========== Maze Initialization ==========
 
 // Create the grid with Cell instances
@@ -246,10 +230,50 @@ for (let row = 0; row < rows; row++) {
   }
 }
 
+function drawSolution(path) {
+  console.log(path);
+  for (let i = 0; i < path.length; i++) {
+    console.log(path[i]);
+    ctx.fillStyle = "dodgerblue"; // start
+    ctx.fillRect(
+      path[i].col * cellSize,
+      path[i].row * cellSize,
+      cellSize,
+      cellSize
+    );
+  }
+}
+
 // Start from the first cell
 current = grid[0];
+let allPaths = [];
 
-console.log();
+function findAllPaths(startCell) {
+  const visited = new Set();
+  const path = [];
+
+  function dfs(cell) {
+    visited.add(index(cell.row, cell.col));
+    path.push(cell);
+
+    const neighbors = cell
+      .getConnectedNeighbors()
+      .filter((n) => !visited.has(index(n.row, n.col)));
+    if (neighbors.length === 0) {
+      // dead end reached
+      allPaths.push([...path]);
+    } else {
+      for (const neighbor of neighbors) {
+        dfs(neighbor);
+      }
+    }
+
+    path.pop(); // backtrack
+    visited.delete(index(cell.row, cell.col));
+  }
+
+  dfs(startCell);
+}
 
 // ========== Maze Generation Algorithm ==========
 
@@ -268,7 +292,12 @@ function update() {
     current = stack.pop();
   } else {
     console.log("Maze generation complete!");
-    drawStartAndEnd(...pickStartAndEndCells());
+    drawPlayer();
+    // drawStartAndEnd(...pickStartAndEndCells());
+
+    // findAllPaths(grid[0]);
+    // console.log(allPaths);
+
     cancelAnimationFrame(animationId); // stop animation
 
     return;
@@ -276,6 +305,30 @@ function update() {
 
   animationId = requestAnimationFrame(update);
 }
+
+document.addEventListener("keydown", (e) => {
+  const cell = grid[index(player.row, player.col)];
+
+  if (e.key === "ArrowUp" && !cell.walls.top) {
+    player.row--;
+  } else if (e.key === "ArrowDown" && !cell.walls.bottom) {
+    player.row++;
+  } else if (e.key === "ArrowLeft" && !cell.walls.left) {
+    player.col--;
+  } else if (e.key === "ArrowRight" && !cell.walls.right) {
+    player.col++;
+  }
+
+  drawGrid();
+  drawPlayer();
+
+  // Optional: Check if they reached the goal
+  //   if (player.row === farthestCell.row && player.col === farthestCell.col) {
+  //     setTimeout(() => {
+  //       alert("🎉 You reached the goal!");
+  //     }, 100);
+  //   }
+});
 
 // update();
 animationId = requestAnimationFrame(update);
