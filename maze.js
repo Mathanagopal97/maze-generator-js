@@ -19,6 +19,13 @@ let player = {
   color: "blue",
 };
 
+let dijkstraQueue = [];
+let dijkstraVisited = new Set();
+let dijkstraDistances = {};
+let dijkstraPrevious = {};
+let dijkstraForward = {};
+let dijkstraStepInProgress = false;
+
 // ========== Cell Class ==========
 class Cell {
   constructor(row, col) {
@@ -26,7 +33,6 @@ class Cell {
     this.col = col;
     this.walls = { top: true, right: true, bottom: true, left: true };
     this.visited = false;
-    this.isSolution = false;
   }
 
   // Draws the cell and its walls
@@ -150,8 +156,6 @@ function pickStartAndEndCells() {
     sideB = sides[Math.floor(Math.random() * sides.length)];
   } while (sideB === sideA); // Ensure different sides
 
-  console.log(sideA, sideB);
-
   function randomCellOnSide(side) {
     if (side === "top") return grid[index(0, Math.floor(Math.random() * cols))];
     if (side === "bottom")
@@ -164,8 +168,6 @@ function pickStartAndEndCells() {
 
   startCell = randomCellOnSide(sideA);
   endCell = randomCellOnSide(sideB);
-
-  console.log(startCell, endCell);
 
   return [startCell, endCell];
 }
@@ -230,49 +232,133 @@ for (let row = 0; row < rows; row++) {
   }
 }
 
-function drawSolution(path) {
-  console.log(path);
-  for (let i = 0; i < path.length; i++) {
-    console.log(path[i]);
-    ctx.fillStyle = "dodgerblue"; // start
-    ctx.fillRect(
-      path[i].col * cellSize,
-      path[i].row * cellSize,
-      cellSize,
-      cellSize
+// Start from the first cell
+current = grid[0];
+
+function initDijkstra() {
+  dijkstraQueue = [];
+  dijkstraVisited = new Set();
+  dijkstraDistances = {};
+  dijkstraPrevious = {};
+  dijkstraStepInProgress = true;
+
+  for (let cell of grid) {
+    dijkstraDistances[index(cell.row, cell.col)] = Infinity;
+    dijkstraPrevious[index(cell.row, cell.col)] = null;
+  }
+
+  const start = grid[0]; // top-left corner
+  dijkstraDistances[index(start.row, start.col)] = 0;
+  dijkstraQueue.push(start);
+
+  requestAnimationFrame(runDijkstraStep);
+}
+let runDijkstraStepAnimation = "";
+function runDijkstraStep() {
+  if (dijkstraQueue.length === 0 || !dijkstraStepInProgress) {
+    console.log("Dijkstra: no path found or already completed.");
+    return;
+  }
+
+  // Sort queue by current distance (lowest first)
+  dijkstraQueue.sort((a, b) => {
+    return (
+      dijkstraDistances[index(a.row, a.col)] -
+      dijkstraDistances[index(b.row, b.col)]
     );
+  });
+
+  const current = dijkstraQueue.shift(); // take the cell with shortest distance
+  const currentIndex = index(current.row, current.col);
+
+  if (dijkstraVisited.has(currentIndex)) {
+    // As we are doing a shift, the next time we run this function,
+    // We don't have the same currentIndex.
+    runDijkstraStepAnimation = requestAnimationFrame(runDijkstraStep);
+    return;
+  }
+
+  dijkstraVisited.add(currentIndex);
+
+  // Draw visited cell
+  ctx.fillStyle = "orange";
+  ctx.fillRect(
+    current.col * cellSize + cellSize * 0.25,
+    current.row * cellSize + cellSize * 0.25,
+    cellSize * 0.5,
+    cellSize * 0.5
+  );
+
+  // Check if we reached the end
+  const end = grid[index(rows - 1, cols - 1)];
+  if (current === end) {
+    dijkstraStepInProgress = false;
+    console.log("Dijkstra: reached the goal!");
+    cancelAnimationFrame(runDijkstraStepAnimation);
+    generateForwardPath(end);
+
+    reconstructDijkstraPath(end);
+    return;
+  }
+
+  // Dijkstra calculation
+  const neighbors = current.getConnectedNeighbors();
+  for (let neighbor of neighbors) {
+    const neighborIndex = index(neighbor.row, neighbor.col);
+
+    if (!dijkstraVisited.has(neighborIndex)) {
+      const altDistance = dijkstraDistances[currentIndex] + 1;
+      if (altDistance < dijkstraDistances[neighborIndex]) {
+        dijkstraDistances[neighborIndex] = altDistance;
+        dijkstraPrevious[neighborIndex] = current;
+        dijkstraQueue.push(neighbor);
+      }
+    }
+  }
+
+  runDijkstraStepAnimation = requestAnimationFrame(runDijkstraStep);
+}
+
+function generateForwardPath(end) {
+  let current = end;
+  let prev = dijkstraPrevious[index(current.row, current.col)];
+  while (prev) {
+    const prevIndex = index(prev.row, prev.col);
+    dijkstraForward[prevIndex] = current;
+
+    current = prev;
+    prev = dijkstraPrevious[index(current.row, current.col)];
   }
 }
 
-// Start from the first cell
-current = grid[0];
-let allPaths = [];
+function reconstructDijkstraPath() {
+  drawGrid();
+  let drawPathAnimation = "";
+  let current = grid[0];
+  let frame = 0;
+  function drawPath() {
+    if (!current) {
+      cancelAnimationFrame(drawPathAnimation);
+      return;
+    }
+    frame += 1;
+    if (frame % 5 === 0) {
+      const i = index(current.row, current.col);
+      ctx.fillStyle = "dodgerblue"; // start
+      ctx.fillRect(
+        current.col * cellSize + cellSize * 0.25,
+        current.row * cellSize + cellSize * 0.25,
+        cellSize * 0.5,
+        cellSize * 0.5
+      );
 
-function findAllPaths(startCell) {
-  const visited = new Set();
-  const path = [];
-
-  function dfs(cell) {
-    visited.add(index(cell.row, cell.col));
-    path.push(cell);
-
-    const neighbors = cell
-      .getConnectedNeighbors()
-      .filter((n) => !visited.has(index(n.row, n.col)));
-    if (neighbors.length === 0) {
-      // dead end reached
-      allPaths.push([...path]);
-    } else {
-      for (const neighbor of neighbors) {
-        dfs(neighbor);
-      }
+      current = dijkstraForward[i];
     }
 
-    path.pop(); // backtrack
-    visited.delete(index(cell.row, cell.col));
+    drawPathAnimation = requestAnimationFrame(drawPath);
   }
 
-  dfs(startCell);
+  drawPathAnimation = requestAnimationFrame(drawPath);
 }
 
 // ========== Maze Generation Algorithm ==========
@@ -293,10 +379,7 @@ function update() {
   } else {
     console.log("Maze generation complete!");
     drawPlayer();
-    // drawStartAndEnd(...pickStartAndEndCells());
-
-    // findAllPaths(grid[0]);
-    // console.log(allPaths);
+    initDijkstra();
 
     cancelAnimationFrame(animationId); // stop animation
 
@@ -321,13 +404,6 @@ document.addEventListener("keydown", (e) => {
 
   drawGrid();
   drawPlayer();
-
-  // Optional: Check if they reached the goal
-  //   if (player.row === farthestCell.row && player.col === farthestCell.col) {
-  //     setTimeout(() => {
-  //       alert("🎉 You reached the goal!");
-  //     }, 100);
-  //   }
 });
 
 // update();
