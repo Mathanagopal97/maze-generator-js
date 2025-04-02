@@ -1,0 +1,12 @@
+{
+  "devDependencies": {
+    "ts-migrate": "^0.1.35",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "codemod": "^0.18.4"
+  },
+  "scripts": {
+    "convert": "npx tsc"
+  }
+}
