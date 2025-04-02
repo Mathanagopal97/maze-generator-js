@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <title>Canvas Maze</title>
@@ -9,10 +9,11 @@
     </style>
   </head>
   <body>
-    <canvas id="mazeCanvas" width="900" height="900"></canvas>
-    <button id="generate">Generate</button>
+    <canvas id="mazeCanvas"></canvas>
+    <div style="display: flex; gap: 20px">
+      <button id="generate">Generate</button> <button id="solve">Solve</button>
+    </div>
 
-    <button id="solve">Solve</button>
     <script src="Utility.js"></script>
     <script src="Cell.js"></script>
     <script src="Player.js"></script>
