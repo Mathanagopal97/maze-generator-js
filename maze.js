@@ -13,19 +13,6 @@ let stack = [];
 let current;
 let animationId;
 
-let player = {
-  row: 0,
-  col: 0,
-  color: "blue",
-};
-
-let dijkstraQueue = [];
-let dijkstraVisited = new Set();
-let dijkstraDistances = {};
-let dijkstraPrevious = {};
-let dijkstraForward = {};
-let dijkstraStepInProgress = false;
-
 // ========== Cell Class ==========
 class Cell {
   constructor(row, col) {
@@ -145,33 +132,6 @@ function randomElement(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-//Pick a random start and end cell
-function pickStartAndEndCells() {
-  const sides = ["top", "right", "bottom", "left"];
-
-  const sideA = sides[Math.floor(Math.random() * sides.length)];
-
-  let sideB;
-  do {
-    sideB = sides[Math.floor(Math.random() * sides.length)];
-  } while (sideB === sideA); // Ensure different sides
-
-  function randomCellOnSide(side) {
-    if (side === "top") return grid[index(0, Math.floor(Math.random() * cols))];
-    if (side === "bottom")
-      return grid[index(rows - 1, Math.floor(Math.random() * cols))];
-    if (side === "left")
-      return grid[index(Math.floor(Math.random() * rows), 0)];
-    if (side === "right")
-      return grid[index(Math.floor(Math.random() * rows), cols - 1)];
-  }
-
-  startCell = randomCellOnSide(sideA);
-  endCell = randomCellOnSide(sideB);
-
-  return [startCell, endCell];
-}
-
 // Highlights the current cell in green
 function highlightCurrentCell(cell) {
   const x = cell.col * cellSize;
@@ -181,14 +141,51 @@ function highlightCurrentCell(cell) {
   ctx.fillRect(x, y, cellSize, cellSize);
 }
 
-function drawPlayer() {
-  ctx.fillStyle = player.color;
-  ctx.fillRect(
-    player.col * cellSize + cellSize * 0.25,
-    player.row * cellSize + cellSize * 0.25,
-    cellSize * 0.5,
-    cellSize * 0.5
-  );
+class Player {
+  row;
+  col;
+  color;
+  ctx;
+  cellSize;
+
+  constructor(row, col, color, ctx, cellSize, grid) {
+    this.row = row;
+    this.col = col;
+    this.color = color;
+    this.ctx = ctx;
+    this.cellSize = cellSize;
+    this.grid = grid;
+
+    document.addEventListener("keydown", (e) => this.handleKeyPress(e));
+  }
+
+  draw() {
+    this.ctx.fillStyle = this.color;
+    this.ctx.fillRect(
+      this.col * this.cellSize + this.cellSize * 0.25,
+      this.row * this.cellSize + this.cellSize * 0.25,
+      this.cellSize * 0.5,
+      this.cellSize * 0.5
+    );
+  }
+
+  handleKeyPress(e) {
+    console.log(e);
+    const cell = this.grid[index(this.row, this.col)];
+
+    if (e.key === "ArrowUp" && !cell.walls.top) {
+      this.row--;
+    } else if (e.key === "ArrowDown" && !cell.walls.bottom) {
+      this.row++;
+    } else if (e.key === "ArrowLeft" && !cell.walls.left) {
+      this.col--;
+    } else if (e.key === "ArrowRight" && !cell.walls.right) {
+      this.col++;
+    }
+
+    drawGrid();
+    this.draw();
+  }
 }
 
 // Draws the entire grid and highlights the current cell
@@ -200,26 +197,6 @@ function drawGrid() {
   if (stack.length > 0 || current.getUnvisitedNeighbors().length > 0) {
     highlightCurrentCell(current);
   }
-}
-
-function drawStartAndEnd(startCell, endCell) {
-  if (!startCell || !endCell) return;
-
-  ctx.fillStyle = "limegreen"; // start
-  ctx.fillRect(
-    startCell.col * cellSize,
-    startCell.row * cellSize,
-    cellSize,
-    cellSize
-  );
-
-  ctx.fillStyle = "crimson"; // end
-  ctx.fillRect(
-    endCell.col * cellSize,
-    endCell.row * cellSize,
-    cellSize,
-    cellSize
-  );
 }
 
 // ========== Maze Initialization ==========
@@ -235,134 +212,144 @@ for (let row = 0; row < rows; row++) {
 // Start from the first cell
 current = grid[0];
 
-function initDijkstra() {
+class DijkstraAlgorithm {
   dijkstraQueue = [];
   dijkstraVisited = new Set();
   dijkstraDistances = {};
   dijkstraPrevious = {};
+  dijkstraForward = {}; // for next steps
   dijkstraStepInProgress = true;
+  ctx = undefined;
+  end = null;
+  animationFrame = null;
 
-  for (let cell of grid) {
-    dijkstraDistances[index(cell.row, cell.col)] = Infinity;
-    dijkstraPrevious[index(cell.row, cell.col)] = null;
-  }
+  constructor(ctx, grid, indexFn, rows, cols, cellSize) {
+    this.ctx = ctx;
+    this.grid = grid;
+    this.index = indexFn;
+    this.rows = rows;
+    this.cols = cols;
+    this.cellSize = cellSize;
 
-  const start = grid[0]; // top-left corner
-  dijkstraDistances[index(start.row, start.col)] = 0;
-  dijkstraQueue.push(start);
-
-  requestAnimationFrame(runDijkstraStep);
-}
-let runDijkstraStepAnimation = "";
-function runDijkstraStep() {
-  if (dijkstraQueue.length === 0 || !dijkstraStepInProgress) {
-    console.log("Dijkstra: no path found or already completed.");
-    return;
-  }
-
-  // Sort queue by current distance (lowest first)
-  dijkstraQueue.sort((a, b) => {
-    return (
-      dijkstraDistances[index(a.row, a.col)] -
-      dijkstraDistances[index(b.row, b.col)]
-    );
-  });
-
-  const current = dijkstraQueue.shift(); // take the cell with shortest distance
-  const currentIndex = index(current.row, current.col);
-
-  if (dijkstraVisited.has(currentIndex)) {
-    // As we are doing a shift, the next time we run this function,
-    // We don't have the same currentIndex.
-    runDijkstraStepAnimation = requestAnimationFrame(runDijkstraStep);
-    return;
-  }
-
-  dijkstraVisited.add(currentIndex);
-
-  // Draw visited cell
-  ctx.fillStyle = "orange";
-  ctx.fillRect(
-    current.col * cellSize + cellSize * 0.25,
-    current.row * cellSize + cellSize * 0.25,
-    cellSize * 0.5,
-    cellSize * 0.5
-  );
-
-  // Check if we reached the end
-  const end = grid[index(rows - 1, cols - 1)];
-  if (current === end) {
-    dijkstraStepInProgress = false;
-    console.log("Dijkstra: reached the goal!");
-    cancelAnimationFrame(runDijkstraStepAnimation);
-    generateForwardPath(end);
-
-    reconstructDijkstraPath(end);
-    return;
-  }
-
-  // Dijkstra calculation
-  const neighbors = current.getConnectedNeighbors();
-  for (let neighbor of neighbors) {
-    const neighborIndex = index(neighbor.row, neighbor.col);
-
-    if (!dijkstraVisited.has(neighborIndex)) {
-      const altDistance = dijkstraDistances[currentIndex] + 1;
-      if (altDistance < dijkstraDistances[neighborIndex]) {
-        dijkstraDistances[neighborIndex] = altDistance;
-        dijkstraPrevious[neighborIndex] = current;
-        dijkstraQueue.push(neighbor);
-      }
+    for (let cell of grid) {
+      this.dijkstraDistances[this.index(cell.row, cell.col)] = Infinity;
+      this.dijkstraPrevious[this.index(cell.row, cell.col)] = null;
     }
+
+    const start = grid[0]; // top-left corner
+    this.dijkstraDistances[this.index(start.row, start.col)] = 0;
+    this.dijkstraQueue.push(start);
+
+    this.end = grid[this.index(rows - 1, cols - 1)];
   }
 
-  runDijkstraStepAnimation = requestAnimationFrame(runDijkstraStep);
-}
-
-function generateForwardPath(end) {
-  let current = end;
-  let prev = dijkstraPrevious[index(current.row, current.col)];
-  while (prev) {
-    const prevIndex = index(prev.row, prev.col);
-    dijkstraForward[prevIndex] = current;
-
-    current = prev;
-    prev = dijkstraPrevious[index(current.row, current.col)];
-  }
-}
-
-function reconstructDijkstraPath() {
-  drawGrid();
-  let drawPathAnimation = "";
-  let current = grid[0];
-  let frame = 0;
-  function drawPath() {
-    if (!current) {
-      cancelAnimationFrame(drawPathAnimation);
+  runStep() {
+    if (this.dijkstraQueue.length === 0 || !this.dijkstraStepInProgress) {
+      console.log("Dijkstra: no path found or already completed.");
+      cancelAnimationFrame(this.animationFrame);
       return;
     }
-    frame += 1;
-    if (frame % 5 === 0) {
-      const i = index(current.row, current.col);
-      ctx.fillStyle = "dodgerblue"; // start
-      ctx.fillRect(
-        current.col * cellSize + cellSize * 0.25,
-        current.row * cellSize + cellSize * 0.25,
-        cellSize * 0.5,
-        cellSize * 0.5
-      );
 
-      current = dijkstraForward[i];
+    this.dijkstraQueue.sort((a, b) => {
+      return (
+        this.dijkstraDistances[this.index(a.row, a.col)] -
+        this.dijkstraDistances[this.index(b.row, b.col)]
+      );
+    });
+
+    const current = this.dijkstraQueue.shift();
+    const currentIndex = this.index(current.row, current.col);
+
+    if (this.dijkstraVisited.has(currentIndex)) {
+      this.animationFrame = requestAnimationFrame(() => this.runStep());
+      return;
     }
 
-    drawPathAnimation = requestAnimationFrame(drawPath);
+    this.dijkstraVisited.add(currentIndex);
+
+    this.ctx.fillStyle = "orange";
+    this.ctx.fillRect(
+      current.col * this.cellSize + this.cellSize * 0.25,
+      current.row * this.cellSize + this.cellSize * 0.25,
+      this.cellSize * 0.5,
+      this.cellSize * 0.5
+    );
+
+    if (current === this.end) {
+      this.dijkstraStepInProgress = false;
+      console.log("Dijkstra: reached the goal!");
+      cancelAnimationFrame(this.animationFrame);
+      this.generateForwardPath(this.end);
+      this.reconstructDijkstraPath();
+      return;
+    }
+
+    const neighbors = current.getConnectedNeighbors();
+    for (let neighbor of neighbors) {
+      const neighborIndex = this.index(neighbor.row, neighbor.col);
+
+      if (!this.dijkstraVisited.has(neighborIndex)) {
+        const tentativeDistance = this.dijkstraDistances[currentIndex] + 1;
+
+        if (tentativeDistance < this.dijkstraDistances[neighborIndex]) {
+          this.dijkstraDistances[neighborIndex] = tentativeDistance;
+          this.dijkstraPrevious[neighborIndex] = current;
+          this.dijkstraQueue.push(neighbor);
+        }
+      }
+    }
+
+    this.animationFrame = requestAnimationFrame(() => this.runStep());
   }
 
-  drawPathAnimation = requestAnimationFrame(drawPath);
+  generateForwardPath(end) {
+    let current = end;
+    let prev = this.dijkstraPrevious[this.index(current.row, current.col)];
+    while (prev) {
+      const prevIndex = this.index(prev.row, prev.col);
+      this.dijkstraForward[prevIndex] = current;
+
+      current = prev;
+      prev = this.dijkstraPrevious[this.index(current.row, current.col)];
+    }
+  }
+
+  reconstructDijkstraPath(speed = 5) {
+    let current = grid[0];
+    let frame = 0;
+    drawGrid();
+
+    const drawPathStep = () => {
+      if (!current) {
+        cancelAnimationFrame(this.animationFrame);
+        return;
+      }
+
+      frame++;
+      if (frame % speed === 0) {
+        const i = this.index(current.row, current.col);
+
+        this.ctx.fillStyle = "dodgerblue";
+        this.ctx.fillRect(
+          current.col * this.cellSize + this.cellSize * 0.25,
+          current.row * this.cellSize + this.cellSize * 0.25,
+          this.cellSize * 0.5,
+          this.cellSize * 0.5
+        );
+
+        current = this.dijkstraForward[i];
+      }
+
+      this.animationFrame = requestAnimationFrame(drawPathStep);
+    };
+
+    this.animationFrame = requestAnimationFrame(drawPathStep);
+  }
+
+  startAnimation() {
+    this.runStep();
+  }
 }
-
-// ========== Maze Generation Algorithm ==========
-
 function update() {
   drawGrid();
   current.visited = true;
@@ -378,8 +365,17 @@ function update() {
     current = stack.pop();
   } else {
     console.log("Maze generation complete!");
-    drawPlayer();
-    initDijkstra();
+    const player = new Player(0, 0, "blue", ctx, cellSize, grid);
+    player.draw();
+    const dijkstra = new DijkstraAlgorithm(
+      ctx,
+      grid,
+      index,
+      rows,
+      cols,
+      cellSize
+    );
+    dijkstra.startAnimation();
 
     cancelAnimationFrame(animationId); // stop animation
 
@@ -388,23 +384,4 @@ function update() {
 
   animationId = requestAnimationFrame(update);
 }
-
-document.addEventListener("keydown", (e) => {
-  const cell = grid[index(player.row, player.col)];
-
-  if (e.key === "ArrowUp" && !cell.walls.top) {
-    player.row--;
-  } else if (e.key === "ArrowDown" && !cell.walls.bottom) {
-    player.row++;
-  } else if (e.key === "ArrowLeft" && !cell.walls.left) {
-    player.col--;
-  } else if (e.key === "ArrowRight" && !cell.walls.right) {
-    player.col++;
-  }
-
-  drawGrid();
-  drawPlayer();
-});
-
-// update();
 animationId = requestAnimationFrame(update);
