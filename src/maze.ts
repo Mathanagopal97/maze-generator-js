@@ -126,7 +126,8 @@ if (ctx) {
     maze.startPlayer();
   });
 
-  //   document.getElementById("regenerate")?.addEventListener("click", () => {
-  //       maze = new Maze(rows, cols, cellSize, ctx);
-  //   });
+  document.getElementById("regenerate")?.addEventListener("click", () => {
+      maze = new Maze(TOTAL_ROWS, TOTAL_COLS, cellSize, ctx);
+      maze.startAnimation();
+  });
 }
