@@ -11,12 +11,17 @@
   <body>
     <canvas id="mazeCanvas"></canvas>
     <div style="display: flex; gap: 20px">
-      <button id="generate">Generate</button> <button id="solve">Solve</button>
+      <button id="generate">Generate</button>
+      <button id="solve_dijkstra">Solve using Dijkstra</button>
+      <button id="solve_astar">Solve using A*</button>
+      <button id="reset">Reset</button>
+      <!-- <button id="regenerate">Generate a new Maze</button> -->
     </div>
 
     <script src="Utility.js"></script>
     <script src="Cell.js"></script>
     <script src="Player.js"></script>
+    <script src="AStar.js"></script>
     <script src="Dijkstra.js"></script>
     <script src="maze.js"></script>
   </body>
