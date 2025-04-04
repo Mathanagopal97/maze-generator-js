@@ -1,9 +1,11 @@
-class Utility {
+import { Cell } from "./Cell";
+import { TOTAL_COLS, TOTAL_ROWS } from "./Constants";
+export class Utility {
   static index(row: number, col: number) {
     if (row < 0 || col < 0 || row >= TOTAL_ROWS || col >= TOTAL_COLS) {
       return -1; // invalid index
     }
-    return row * cols + col;
+    return row * TOTAL_COLS + col;
   }
 
   static drawGrid(grid: Array<Cell>, ctx: CanvasRenderingContext2D) {

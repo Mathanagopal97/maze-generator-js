@@ -1,6 +1,8 @@
+import { Cell } from "./Cell";
+import { Utility } from "./Utility";
 // This class should contain logic behind the player
 // All dependencies must be present in this class.
-class Player {
+export class Player {
   row;
   col;
   color;

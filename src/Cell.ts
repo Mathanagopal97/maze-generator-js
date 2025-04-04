@@ -1,3 +1,5 @@
+import { Utility } from "./Utility";
+
 type Walls = {
   top: boolean;
   right: boolean;
@@ -5,7 +7,7 @@ type Walls = {
   left: boolean;
 };
 
-class Cell {
+export class Cell {
   row: number;
   col: number;
   walls: Walls;

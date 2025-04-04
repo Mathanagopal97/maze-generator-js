@@ -1,4 +1,8 @@
-class AStarAlgorithm {
+import { Cell } from "./Cell";
+import { TOTAL_COLS, TOTAL_ROWS } from "./Constants";
+import { Utility } from "./Utility";
+
+export class AStarAlgorithm {
   ctx: CanvasRenderingContext2D;
   grid: Array<Cell>;
   cellSize: number;
@@ -21,7 +25,7 @@ class AStarAlgorithm {
     this.grid = grid;
     this.cellSize = cellSize;
     this.start = grid[0];
-    this.end = grid[Utility.index(rows - 1, cols - 1)];
+    this.end = grid[Utility.index(TOTAL_ROWS - 1, TOTAL_COLS - 1)];
     this.openSet = [this.start];
     this.gScore = [];
     this.fScore = [];

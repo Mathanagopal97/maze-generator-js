@@ -1,6 +1,9 @@
 // This class should contain all the code related to Dijkstra algorithm.
 // All dependencies must be present in this class
-class DijkstraAlgorithm {
+import { Cell } from "./Cell";
+import { TOTAL_COLS, TOTAL_ROWS } from "./Constants";
+import { Utility } from "./Utility";
+export class DijkstraAlgorithm {
   dijkstraQueue = new Array<Cell>();
   dijkstraVisited = new Set();
   dijkstraDistances: Array<number> = [];
@@ -35,7 +38,7 @@ class DijkstraAlgorithm {
     this.dijkstraDistances[Utility.index(start.row, start.col)] = 0;
     this.dijkstraQueue.push(start);
 
-    this.end = grid[Utility.index(rows - 1, cols - 1)];
+    this.end = grid[Utility.index(TOTAL_ROWS - 1, TOTAL_COLS - 1)];
     this.animationFrame = 0;
   }
 

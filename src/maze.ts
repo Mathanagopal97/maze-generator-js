@@ -1,9 +1,11 @@
 // Grid configuration
-let rows = 30;
-let cols = 30;
-const cellSize = 40;
-const TOTAL_ROWS = 30;
-const TOTAL_COLS = 30;
+import { AStarAlgorithm } from "./AStar";
+import { Cell } from "./Cell";
+import { cellSize, TOTAL_COLS, TOTAL_ROWS } from "./Constants";
+import { DijkstraAlgorithm } from "./Dijkstra";
+import { Player } from "./Player";
+import { Utility } from "./Utility";
+
 // ========== Maze Canvas Setup ==========
 let canvas: HTMLCanvasElement = document.getElementById(
   "mazeCanvas"
@@ -100,9 +102,9 @@ class Maze {
 }
 
 if (ctx) {
-  ctx.canvas.width = cols * cellSize;
-  ctx.canvas.height = rows * cellSize;
-  let maze = new Maze(rows, cols, cellSize, ctx);
+  ctx.canvas.width = TOTAL_COLS * cellSize;
+  ctx.canvas.height = TOTAL_ROWS * cellSize;
+  let maze = new Maze(TOTAL_ROWS, TOTAL_COLS, cellSize, ctx);
 
   document.getElementById("solve_dijkstra")?.addEventListener("click", () => {
     maze.initiateDijkstra();
