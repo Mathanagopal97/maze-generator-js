@@ -1,7 +1,7 @@
 // This class should contain all the code related to Dijkstra algorithm.
 // All dependencies must be present in this class
 import { Cell } from "./Cell";
-import { TOTAL_COLS, TOTAL_ROWS } from "./Constants";
+import { TOTAL_COLS, TOTAL_ROWS, cellSize } from "./Constants";
 import { Utility } from "./Utility";
 export class DijkstraAlgorithm {
   dijkstraQueue = new Array<Cell>();
@@ -16,18 +16,12 @@ export class DijkstraAlgorithm {
   grid;
   rows;
   cols;
-  cellSize;
 
-  constructor(
-    ctx: CanvasRenderingContext2D,
-    grid: Array<Cell>,
-    cellSize: number
-  ) {
+  constructor(ctx: CanvasRenderingContext2D, grid: Array<Cell>) {
     this.ctx = ctx;
     this.grid = grid;
     this.rows = TOTAL_ROWS;
     this.cols = TOTAL_COLS;
-    this.cellSize = cellSize;
 
     for (let cell of this.grid) {
       this.dijkstraDistances[Utility.index(cell.row, cell.col)] = Infinity;
@@ -69,10 +63,10 @@ export class DijkstraAlgorithm {
 
     this.ctx.fillStyle = "orange";
     this.ctx.fillRect(
-      current.col * this.cellSize + this.cellSize * 0.25,
-      current.row * this.cellSize + this.cellSize * 0.25,
-      this.cellSize * 0.5,
-      this.cellSize * 0.5
+      current.col * cellSize + cellSize * 0.25,
+      current.row * cellSize + cellSize * 0.25,
+      cellSize * 0.5,
+      cellSize * 0.5
     );
 
     if (current === this.end) {
@@ -131,10 +125,10 @@ export class DijkstraAlgorithm {
 
         this.ctx.fillStyle = "dodgerblue";
         this.ctx.fillRect(
-          current.col * this.cellSize + this.cellSize * 0.25,
-          current.row * this.cellSize + this.cellSize * 0.25,
-          this.cellSize * 0.5,
-          this.cellSize * 0.5
+          current.col * cellSize + cellSize * 0.25,
+          current.row * cellSize + cellSize * 0.25,
+          cellSize * 0.5,
+          cellSize * 0.5
         );
 
         current = this.dijkstraForward[i];

@@ -1,11 +1,10 @@
 import { Cell } from "./Cell";
-import { TOTAL_COLS, TOTAL_ROWS } from "./Constants";
+import { TOTAL_COLS, TOTAL_ROWS, cellSize } from "./Constants";
 import { Utility } from "./Utility";
 
 export class AStarAlgorithm {
   ctx: CanvasRenderingContext2D;
   grid: Array<Cell>;
-  cellSize: number;
   openSet: Array<Cell>;
   gScore: Array<number>;
   fScore: Array<number>;
@@ -16,14 +15,9 @@ export class AStarAlgorithm {
   aStarVisited: Set<number>;
   animationId: number;
 
-  constructor(
-    ctx: CanvasRenderingContext2D,
-    grid: Array<Cell>,
-    cellSize: number
-  ) {
+  constructor(ctx: CanvasRenderingContext2D, grid: Array<Cell>) {
     this.ctx = ctx;
     this.grid = grid;
-    this.cellSize = cellSize;
     this.start = grid[0];
     this.end = grid[Utility.index(TOTAL_ROWS - 1, TOTAL_COLS - 1)];
     this.openSet = [this.start];
@@ -76,10 +70,10 @@ export class AStarAlgorithm {
 
     this.ctx.fillStyle = "orange";
     this.ctx.fillRect(
-      current.col * this.cellSize + this.cellSize * 0.25,
-      current.row * this.cellSize + this.cellSize * 0.25,
-      this.cellSize * 0.5,
-      this.cellSize * 0.5
+      current.col * cellSize + cellSize * 0.25,
+      current.row * cellSize + cellSize * 0.25,
+      cellSize * 0.5,
+      cellSize * 0.5
     );
 
     if (current === this.end) {
@@ -133,10 +127,10 @@ export class AStarAlgorithm {
       if (frame % 5 === 0) {
         this.ctx.fillStyle = "dodgerblue";
         this.ctx.fillRect(
-          cell.col * this.cellSize + this.cellSize * 0.25,
-          cell.row * this.cellSize + this.cellSize * 0.25,
-          this.cellSize * 0.5,
-          this.cellSize * 0.5
+          cell.col * cellSize + cellSize * 0.25,
+          cell.row * cellSize + cellSize * 0.25,
+          cellSize * 0.5,
+          cellSize * 0.5
         );
 
         cell = totalPath[i];

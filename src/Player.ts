@@ -1,5 +1,6 @@
 import { Cell } from "./Cell";
 import { Utility } from "./Utility";
+import { cellSize } from "./Constants";
 // This class should contain logic behind the player
 // All dependencies must be present in this class.
 export class Player {
@@ -7,7 +8,6 @@ export class Player {
   col;
   color;
   ctx;
-  cellSize;
   grid;
 
   constructor(
@@ -15,14 +15,12 @@ export class Player {
     col: number,
     color: string,
     ctx: CanvasRenderingContext2D,
-    cellSize: number,
     grid: Array<Cell>
   ) {
     this.row = row;
     this.col = col;
     this.color = color;
     this.ctx = ctx;
-    this.cellSize = cellSize;
     this.grid = grid;
 
     document.addEventListener("keydown", (e) => this.handleKeyPress(e));
@@ -31,10 +29,10 @@ export class Player {
   draw() {
     this.ctx.fillStyle = this.color;
     this.ctx.fillRect(
-      this.col * this.cellSize + this.cellSize * 0.25,
-      this.row * this.cellSize + this.cellSize * 0.25,
-      this.cellSize * 0.5,
-      this.cellSize * 0.5
+      this.col * cellSize + cellSize * 0.25,
+      this.row * cellSize + cellSize * 0.25,
+      cellSize * 0.5,
+      cellSize * 0.5
     );
   }
 

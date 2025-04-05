@@ -13,32 +13,21 @@ let canvas: HTMLCanvasElement = document.getElementById(
 let ctx: CanvasRenderingContext2D | null = canvas.getContext("2d");
 
 class Maze {
-  rows;
-  cols;
   grid: Array<Cell>;
   current;
   animationId: number;
   stack: Array<any>;
-  cellSize;
   ctx;
 
-  constructor(
-    rows: number,
-    cols: number,
-    cellSize: number,
-    ctx: CanvasRenderingContext2D
-  ) {
-    this.rows = rows;
-    this.cols = cols;
+  constructor(ctx: CanvasRenderingContext2D) {
     this.stack = [];
-    this.cellSize = cellSize;
     this.ctx = ctx;
     this.animationId = 0;
     this.grid = new Array<Cell>();
 
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const cell = new Cell(row, col, this.cellSize);
+    for (let row = 0; row < TOTAL_ROWS; row++) {
+      for (let col = 0; col < TOTAL_COLS; col++) {
+        const cell = new Cell(row, col, cellSize);
         this.grid.push(cell);
       }
     }
@@ -52,11 +41,11 @@ class Maze {
       this.stack.length > 0 ||
       this.current.getUnvisitedNeighbors(this.grid).length > 0
     ) {
-      const x = this.current.col * this.cellSize;
-      const y = this.current.row * this.cellSize;
+      const x = this.current.col * cellSize;
+      const y = this.current.row * cellSize;
 
       this.ctx.fillStyle = "green";
-      this.ctx.fillRect(x, y, this.cellSize, this.cellSize);
+      this.ctx.fillRect(x, y, cellSize, cellSize);
     }
     this.current.visited = true;
 
@@ -84,19 +73,19 @@ class Maze {
   }
 
   startPlayer() {
-    const player = new Player(0, 0, "blue", this.ctx, this.cellSize, this.grid);
+    const player = new Player(0, 0, "blue", this.ctx, this.grid);
     player.draw();
   }
 
   initiateDijkstra() {
     Utility.drawGrid(this.grid, this.ctx);
-    const dijkstra = new DijkstraAlgorithm(this.ctx, this.grid, this.cellSize);
+    const dijkstra = new DijkstraAlgorithm(this.ctx, this.grid);
     dijkstra.startAnimation();
   }
 
   initiateAStar() {
     Utility.drawGrid(this.grid, this.ctx);
-    const aStar = new AStarAlgorithm(this.ctx, this.grid, this.cellSize);
+    const aStar = new AStarAlgorithm(this.ctx, this.grid);
     aStar.startAnimation();
   }
 }
@@ -104,7 +93,7 @@ class Maze {
 if (ctx) {
   ctx.canvas.width = TOTAL_COLS * cellSize;
   ctx.canvas.height = TOTAL_ROWS * cellSize;
-  let maze = new Maze(TOTAL_ROWS, TOTAL_COLS, cellSize, ctx);
+  let maze = new Maze(ctx);
 
   document.getElementById("solve_dijkstra")?.addEventListener("click", () => {
     maze.initiateDijkstra();
@@ -127,7 +116,7 @@ if (ctx) {
   });
 
   document.getElementById("regenerate")?.addEventListener("click", () => {
-      maze = new Maze(TOTAL_ROWS, TOTAL_COLS, cellSize, ctx);
-      maze.startAnimation();
+    maze = new Maze(ctx);
+    maze.startAnimation();
   });
 }
