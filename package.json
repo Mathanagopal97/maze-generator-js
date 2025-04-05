@@ -8,7 +8,7 @@
   },
   "scripts": {
     "convert": "npx tsc",
-    "develop": "webpack-dev-server --mode development",
+    "dev": "webpack --watch",
     "build": "webpack --mode production"
   }
 }
