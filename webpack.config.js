@@ -1,13 +1,12 @@
 const path = require("path");
 
 module.exports = {
-  entry: "./src/index.ts",
+  entry: "./src/maze.ts",
   output: {
     filename: "bundle.js",
     path: path.resolve(__dirname, "dist"),
   },
   mode: "development",
-  watch: true,
   module: {
     rules: [
       {
